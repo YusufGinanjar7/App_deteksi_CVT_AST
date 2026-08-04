@@ -2,40 +2,6 @@
 
 import { useState, ChangeEvent, useRef } from 'react';
 
-// ==========================================
-// FUNGSI AUDIO KE WAV
-// ==========================================
-function audioBufferToWav(buffer: AudioBuffer): Blob {
-  const numOfChan = buffer.numberOfChannels;
-  const length = buffer.length * numOfChan * 2 + 44;
-  const bufferArr = new ArrayBuffer(length);
-  const view = new DataView(bufferArr);
-  const channels = [];
-  let sample, offset = 0, pos = 0;
-
-  const setUint16 = (data: number) => { view.setUint16(offset, data, true); offset += 2; };
-  const setUint32 = (data: number) => { view.setUint32(offset, data, true); offset += 4; };
-
-  setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
-  setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
-  setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan);
-  setUint16(numOfChan * 2); setUint16(16);
-  setUint32(0x61746164); setUint32(length - pos - 4);
-
-  for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
-
-  while (pos < buffer.length) {
-    for (let i = 0; i < numOfChan; i++) {
-      sample = Math.max(-1, Math.min(1, channels[i][pos]));
-      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
-      view.setInt16(offset, sample, true);
-      offset += 2;
-    }
-    pos++;
-  }
-  return new Blob([bufferArr], { type: "audio/wav" });
-}
-
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [hasil, setHasil] = useState<any>(null);
@@ -46,15 +12,15 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  // TAMBAHAN: Ref untuk menyimpan ID Timeout agar bisa dibatalkan jika tombol stop ditekan manual
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // PERBAIKAN 1: Label disamakan persis dengan output Hugging Face
   const labelMap: Record<string, string> = {
     "Normal": "Normal",
     "Kerusakan Ringan": "Kerusakan Ringan",
     "Kerusakan Parah": "Kerusakan Parah",
   };
 
-  // PERBAIKAN 2: Kata kuncinya disamakan jadi "Kerusakan Ringan" & "Kerusakan Parah"
   const deskripsiMap: Record<string, string> = {
     "Normal": "Sinyal suara stabil didominasi dengungan dasar perputaran mesin tanpa frekuensi liar. V-belt, roller, dan komponen CVT berfungsi wajar.",
     "Kerusakan Ringan": "Terdeteksi anomali (bunyi berdecit/getaran ringan) pada pita frekuensi menengah. Terdapat indikasi keausan awal, komponen kotor, atau kering. Disarankan servis ringan.",
@@ -68,37 +34,67 @@ export default function Home() {
     setHasil(null);
   };
 
+  // TAMBAHAN: Ekstraksi fungsi stop agar bisa dipanggil otomatis
+  const stopRecordingAction = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      let mimeType = '';
+      if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+      else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mediaRecorder.onstop = async () => {
+      mediaRecorder.ondataavailable = (e) => { 
+        if (e.data.size > 0) audioChunksRef.current.push(e.data); 
+      };
+      
+      mediaRecorder.onstop = () => {
         setIsProcessing(true); 
         stream.getTracks().forEach(track => track.stop()); 
         
-        const webmBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuffer = await audioContext.decodeAudioData(await webmBlob.arrayBuffer());
+        try {
+          const actualMimeType = mediaRecorder.mimeType || 'audio/webm';
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+          
+          const extension = actualMimeType.includes('mp4') ? 'mp4' : 'webm';
+          const audioFile = new File([audioBlob], `rekaman-mekanis.${extension}`, { type: actualMimeType });
 
-        setFile(new File([audioBufferToWav(audioBuffer)], "rekaman-mekanis.wav", { type: 'audio/wav' }));
-        setIsProcessing(false);
+          setFile(audioFile);
+        } catch (error) {
+          console.error("Gagal memproses rekaman:", error);
+          alert("Gagal menyimpan rekaman lokal.");
+        } finally {
+          setIsProcessing(false);
+        }
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setHasil(null); setFile(null);
+
+      // FITUR BARU: Otomatis berhenti tepat di detik ke-3
+      recordingTimeoutRef.current = setTimeout(() => {
+        stopRecordingAction();
+      }, 3000);
+
     } catch (error) { alert("Akses mikrofon ditolak."); }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
+    stopRecordingAction();
   };
 
   const analisisSuara = async () => {
@@ -108,7 +104,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": file.type || "audio/wav" },
+        headers: { "Content-Type": file.type || "audio/webm" },
         body: await file.arrayBuffer(),
       });
       const result = await response.json();
@@ -165,7 +161,7 @@ export default function Home() {
           </button>
           
           <div className="h-6 mt-4 text-center">
-            {isRecording && <p className="text-red-500 text-sm font-bold tracking-widest animate-pulse">● MEREKAM...</p>}
+            {isRecording && <p className="text-red-500 text-sm font-bold animate-pulse">● MEREKAM (Otomatis 3 Detik)...</p>}
             {isProcessing && <p className="text-indigo-500 text-sm font-semibold animate-pulse">Menyelaraskan Frekuensi...</p>}
           </div>
         </div>
@@ -202,6 +198,7 @@ export default function Home() {
             <div className="text-center p-4">
               <p className="text-sm font-medium text-gray-600">Tarik berkas ke sini, atau</p>
               <p className="text-sm font-bold text-blue-600 mt-1">Jelajahi Berkas</p>
+              <p className="text-[10px] text-gray-400 mt-1">(Optimal: Durasi 3 Detik)</p>
             </div>
           )}
         </div>
@@ -250,7 +247,6 @@ export default function Home() {
                         {percentage}%
                       </span>
                     </div>
-                    {/* PERBAIKAN 3: Logika warna disesuaikan dengan "Kerusakan Ringan" & "Kerusakan Parah" */}
                     <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-1000 ease-out ${
@@ -266,7 +262,6 @@ export default function Home() {
               })}
             </div>
 
-            {/* PERBAIKAN 4: Warna kotak kesimpulan disesuaikan dengan "Kerusakan Ringan" & "Kerusakan Parah" */}
             <div className={`mt-6 p-4 rounded-xl border border-l-4 shadow-sm ${
                 topPredictionLabel === 'Kerusakan Parah' ? 'bg-red-50 border-red-200 border-l-red-500' : 
                 topPredictionLabel === 'Kerusakan Ringan' ? 'bg-amber-50 border-amber-200 border-l-amber-500' : 

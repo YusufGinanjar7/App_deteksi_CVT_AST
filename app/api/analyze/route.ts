@@ -3,13 +3,18 @@ import { client, handle_file } from '@gradio/client';
 
 export async function POST(req: Request) {
   try {
+    const contentType = req.headers.get("Content-Type") || 'audio/webm';
+    const extension = contentType.includes('mp4') ? 'mp4' : contentType.includes('wav') ? 'wav' : 'webm';
+    
     const arrayBuffer = await req.arrayBuffer();
-    const audioFile = new File([arrayBuffer], "rekaman.wav", { type: 'audio/wav' });
+    const audioFile = new File([arrayBuffer], `rekaman.${extension}`, { type: contentType });
 
-    // 1. Hubungkan ke Space Anda
-    const app = await client("suyagi/NEW_AST_FINAL");
+    // 1. Hubungkan ke Space dengan memasukkan Token HF
+    const app = await client("suyagi/NEW_AST_FINAL", {
+      hf_token: process.env.HF_TOKEN
+    } as any);
 
-    // 2. Tembak nama API yang PASTI BENAR (bukan pakai angka Index lagi)
+    // 2. Tembak API Gradio
     const result = await app.predict("/prediksi", [
         handle_file(audioFile) 
     ]);
@@ -33,9 +38,8 @@ export async function POST(req: Request) {
     return NextResponse.json(formattedResult, { status: 200 });
 
   } catch (error: any) {
-    console.error("============= ERROR DARI GRADIO SPACE =============");
+    console.error("============= ERROR DARI GRADIO =============");
     console.error(error);
-    console.error("===================================================");
     return NextResponse.json({ error: "Gagal memproses via Space." }, { status: 500 });
   }
 }

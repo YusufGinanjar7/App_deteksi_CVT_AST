@@ -47,7 +47,14 @@ export default function Home() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1, // Memaksa format Mono (bukan Stereo) agar fokus
+        } 
+      });
       
       let mimeType = '';
       if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';

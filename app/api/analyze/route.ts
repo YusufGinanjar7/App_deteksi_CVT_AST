@@ -9,15 +9,29 @@ export async function POST(req: Request) {
     const arrayBuffer = await req.arrayBuffer();
     const audioFile = new File([arrayBuffer], `rekaman.${extension}`, { type: contentType });
 
-    // 1. Hubungkan ke Space dengan memasukkan Token HF
-    const app = await client("suyagi/NEW_AST_FINAL", {
-      hf_token: process.env.HF_TOKEN
-    } as any);
+    let result;
 
-    // 2. Tembak API Gradio
-    const result = await app.predict("/prediksi", [
-        handle_file(audioFile) 
-    ]);
+    try {
+      // 1. Coba hubungkan ke HF Space dulu dengan Token HF
+      const app = await client("suyagi/NEW_AST_FINAL", {
+        hf_token: process.env.HF_TOKEN
+      } as any);
+
+      // 2. Tembak API Gradio
+      result = await app.predict("/prediksi", [
+          handle_file(audioFile) 
+      ]);
+
+    } catch (hfError: any) {
+      console.warn("HF Space gagal, mencoba fallback ke ngrok:", hfError?.message || hfError);
+
+      // Fallback: hubungkan ke ngrok (Space lokal) kalau HF gagal/limit
+      const app = await client(process.env.NGROK_URL as string);
+
+      result = await app.predict("/prediksi", [
+          handle_file(audioFile)
+      ]);
+    }
 
     const outputData = result.data as any[];
     

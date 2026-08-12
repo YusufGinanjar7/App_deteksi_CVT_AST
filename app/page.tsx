@@ -12,7 +12,6 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  // TAMBAHAN: Ref untuk menyimpan ID Timeout agar bisa dibatalkan jika tombol stop ditekan manual
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const labelMap: Record<string, string> = {
@@ -21,10 +20,11 @@ export default function Home() {
     "Kerusakan Parah": "Kerusakan Parah",
   };
 
+  // PEMBARUAN: Deskripsi disesuaikan dengan instruksi tindakan perbaikan
   const deskripsiMap: Record<string, string> = {
-    "Normal": "Sinyal suara stabil didominasi dengungan dasar perputaran mesin tanpa frekuensi liar. V-belt, roller, dan komponen CVT berfungsi wajar.",
-    "Kerusakan Ringan": "Terdeteksi anomali (bunyi berdecit/getaran ringan) pada pita frekuensi menengah. Terdapat indikasi keausan awal, komponen kotor, atau kering. Disarankan servis ringan.",
-    "Kerusakan Parah": "Peringatan Kritis! Terdeteksi kekacauan energi suara (suara ngorok/benturan keras) menembus frekuensi tinggi. Indikasi kerusakan fatal (roller hancur/bearing aus). Segera bawa ke bengkel!"
+    "Normal": "Kondisi motor sehat. Tidak terdeteksi adanya suara anomali mekanis pada area transmisi CVT.",
+    "Kerusakan Ringan": "Terdeteksi suara kerusakan ringan (seperti decit atau getaran awal). Solusi: Disarankan untuk melakukan servis CVT ringan di bengkel untuk pembersihan atau penyetelan.",
+    "Kerusakan Parah": "Peringatan Kritis! Terdeteksi suara anomali tingkat tinggi yang kasar. Solusi: Segera bawa kendaraan ke bengkel dalam waktu dekat untuk pengecekan lebih lanjut. Kemungkinan besar memerlukan pergantian komponen (parts)."
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +34,6 @@ export default function Home() {
     setHasil(null);
   };
 
-  // TAMBAHAN: Ekstraksi fungsi stop agar bisa dipanggil otomatis
   const stopRecordingAction = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
@@ -52,7 +51,7 @@ export default function Home() {
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
-          channelCount: 1, // Memaksa format Mono (bukan Stereo) agar fokus
+          channelCount: 1, 
         } 
       });
       
@@ -92,10 +91,10 @@ export default function Home() {
       setIsRecording(true);
       setHasil(null); setFile(null);
 
-      // FITUR BARU: Otomatis berhenti tepat di detik ke-3
+      // PEMBARUAN: Waktu otomatis berhenti diubah menjadi 10 detik (10000 ms)
       recordingTimeoutRef.current = setTimeout(() => {
         stopRecordingAction();
-      }, 3000);
+      }, 10000);
 
     } catch (error) { alert("Akses mikrofon ditolak."); }
   };
@@ -138,7 +137,7 @@ export default function Home() {
       
       <div className="w-full max-w-[28rem] bg-white/70 backdrop-blur-xl border border-white rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] p-8 transition-all duration-500">
         
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 text-blue-600 mb-4 shadow-inner">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
               <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clipRule="evenodd" />
@@ -148,6 +147,19 @@ export default function Home() {
             CVT Smart Analyzer
           </h1>
           <p className="text-gray-500 text-sm mt-2">Sistem Deteksi Anomali Akustik Motor Matik</p>
+        </div>
+
+        {/* PEMBARUAN: Kotak Panduan Perekaman (SOP) */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+          <h3 className="text-sm font-bold text-blue-800 mb-2 flex items-center">
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Panduan Perekaman Akurat
+          </h3>
+          <ol className="text-xs text-blue-700 space-y-1.5 ml-1">
+            <li>1. Posisikan ponsel sejauh <strong>10 - 30 cm</strong> menghadap tegak lurus ke blok CVT (sisi kiri motor).</li>
+            <li>2. Pastikan mesin dalam kondisi <strong>stasioner (idle)</strong> atau lakukan <strong>tarikan gas ringan</strong>.</li>
+            <li>3. Tekan tombol rekam di bawah (maksimal 10 detik).</li>
+          </ol>
         </div>
 
         <div className="flex flex-col items-center justify-center mb-8 relative">
@@ -168,7 +180,8 @@ export default function Home() {
           </button>
           
           <div className="h-6 mt-4 text-center">
-            {isRecording && <p className="text-red-500 text-sm font-bold animate-pulse">● MEREKAM (Otomatis 3 Detik)...</p>}
+            {/* PEMBARUAN: Teks indikator diubah ke 10 detik */}
+            {isRecording && <p className="text-red-500 text-sm font-bold animate-pulse">● MEREKAM (Maksimal 10 Detik)...</p>}
             {isProcessing && <p className="text-indigo-500 text-sm font-semibold animate-pulse">Menyelaraskan Frekuensi...</p>}
           </div>
         </div>
@@ -205,7 +218,8 @@ export default function Home() {
             <div className="text-center p-4">
               <p className="text-sm font-medium text-gray-600">Tarik berkas ke sini, atau</p>
               <p className="text-sm font-bold text-blue-600 mt-1">Jelajahi Berkas</p>
-              <p className="text-[10px] text-gray-400 mt-1">(Optimal: Durasi 3 Detik)</p>
+              {/* PEMBARUAN: Teks panduan upload disesuaikan */}
+              <p className="text-[10px] text-gray-400 mt-1">(Batas Maksimal: 10 Detik)</p>
             </div>
           )}
         </div>
@@ -225,10 +239,10 @@ export default function Home() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span>Memproses Matriks...</span>
+              <span>Memproses Suara...</span>
             </div>
           ) : (
-            'Analisis AI Sekarang'
+            'Analisis Suara Sekarang'
           )}
         </button>
 

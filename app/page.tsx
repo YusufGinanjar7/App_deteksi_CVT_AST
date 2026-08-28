@@ -20,12 +20,14 @@ export default function Home() {
     "Kerusakan Parah": "Kerusakan Parah",
   };
 
-  // PEMBARUAN: Deskripsi disesuaikan dengan instruksi tindakan perbaikan
-  const deskripsiMap: Record<string, string> = {
-    "Normal": "Kondisi motor sehat. Tidak terdeteksi adanya suara anomali mekanis pada area transmisi CVT.",
-    "Kerusakan Ringan": "Terdeteksi suara kerusakan ringan (seperti decit atau getaran awal). Solusi: Disarankan untuk melakukan servis CVT ringan di bengkel untuk pembersihan atau penyetelan.",
-    "Kerusakan Parah": "Peringatan Kritis! Terdeteksi suara anomali tingkat tinggi yang kasar. Solusi: Segera bawa kendaraan ke bengkel dalam waktu dekat untuk pengecekan lebih lanjut. Kemungkinan besar memerlukan pergantian komponen (parts)."
-  };
+  // PEMBARUAN: Deskripsi disesuaikan untuk memberikan kesimpulan komponen spesifik (Saran Penguji)
+const deskripsiMap: Record<string, string> = {
+  "Normal": "Status: Aman. Pola akustik transmisi CVT berada dalam ambang batas normal. Tidak terdeteksi gesekan atau getaran berlebih. Tetap lakukan perawatan berkala sesuai jadwal buku panduan.",
+  
+  "Kerusakan Ringan": "Status: Perlu Perhatian (Indikasi Keausan Awal). Pola suara mendeteksi getaran tidak wajar atau bunyi decit. \n\nKesimpulan Komponen: Terdapat potensi penumpukan kotoran/debu pada area CVT, pelumas (grease) yang mulai mengering, atau keausan ringan pada V-Belt dan Roller yang mulai tidak presisi (peyang). \n\nTindakan: Lakukan servis CVT (pembersihan, penyetelan, dan pelumasan ulang) di bengkel untuk mencegah keausan merambat.",
+
+  "Kerusakan Parah": "Status: Kritis (Peringatan Kerusakan Mekanis). Pola suara mendeteksi kebisingan tingkat tinggi (kasar/berderak). \n\nKesimpulan Komponen: Terdapat indikasi kerusakan fisik pada komponen utama penggerak. Kemungkinan besar disebabkan oleh V-Belt yang retak/aus parah, Kampas Ganda yang habis, kerusakan pada Rumah Roller (Pulley), atau keausan Bearing CVT. \n\nTindakan: Segera bawa kendaraan ke bengkel untuk inspeksi visual dan penggantian komponen (parts) guna mencegah transmisi macet atau putus di jalan."
+};
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -149,16 +151,17 @@ export default function Home() {
           <p className="text-gray-500 text-sm mt-2">Sistem Deteksi Anomali Akustik Motor Matik</p>
         </div>
 
-        {/* PEMBARUAN: Kotak Panduan Perekaman (SOP) */}
+       {/* PEMBARUAN: Kotak Panduan Perekaman (SOP) dengan Titik Perekaman Presisi */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
           <h3 className="text-sm font-bold text-blue-800 mb-2 flex items-center">
             <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Panduan Perekaman Akurat
           </h3>
-          <ol className="text-xs text-blue-700 space-y-1.5 ml-1">
-            <li>1. Posisikan ponsel sejauh <strong>10 - 30 cm</strong> menghadap tegak lurus ke blok CVT (sisi kiri motor).</li>
-            <li>2. Pastikan mesin dalam kondisi <strong>stasioner (idle)</strong> atau lakukan <strong>tarikan gas ringan</strong>.</li>
-            <li>3. Tekan tombol rekam di bawah (maksimal 10 detik).</li>
+          <ol className="text-xs text-blue-700 space-y-1.5 ml-1 list-decimal list-inside">
+            <li>1. Posisikan mikrofon ponsel pada jarak <strong>15 - 20 cm</strong> menghadap tegak lurus ke sisi kiri motor.</li>
+            <li>2. Arahkan titik rekam presisi di <strong>bagian tengah penutup/blok CVT</strong> (berada di antara puli depan dan puli belakang).</li>
+            <li>3. Kondisi motor dapat <strong>stasioner (idle)</strong> atau lakukan <strong>tarikan gas ringan</strong> untuk memancing suara decit/getaran.</li>
+            <li>4. Tekan tombol rekam dan tahan posisi selama maksimal 10 detik.</li>
           </ol>
         </div>
 

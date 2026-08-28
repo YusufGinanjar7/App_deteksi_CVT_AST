@@ -158,10 +158,13 @@ const deskripsiMap: Record<string, string> = {
             Panduan Perekaman Akurat
           </h3>
           <ol className="text-xs text-blue-700 space-y-1.5 ml-1 list-decimal list-inside">
-            <li>1. Posisikan mikrofon ponsel pada jarak <strong>15 - 20 cm</strong> menghadap tegak lurus ke sisi kiri motor.</li>
-            <li>2. Arahkan titik rekam presisi di <strong>bagian tengah penutup/blok CVT</strong> (berada di antara puli depan dan puli belakang).</li>
-            <li>3. Kondisi motor dapat <strong>stasioner (idle)</strong> atau lakukan <strong>tarikan gas ringan</strong> untuk memancing suara decit/getaran.</li>
-            <li>4. Tekan tombol rekam dan tahan posisi selama maksimal 10 detik.</li>
+            <li>Posisikan mikrofon ponsel pada jarak <strong>15 - 20 cm</strong> menghadap tegak lurus ke sisi kiri motor.</li>
+          
+            <li>Arahkan titik rekam presisi di <strong>bagian tengah penutup/blok CVT</strong> (berada di antara puli depan dan puli belakang).</li>
+          
+            <li>Kondisi motor dapat <strong>stasioner (idle)</strong> atau lakukan <strong>tarikan gas ringan</strong> untuk memancing suara decit/getaran.</li>
+          
+            <li>Tekan tombol rekam dan tahan posisi selama maksimal 10 detik.</li>
           </ol>
         </div>
 
